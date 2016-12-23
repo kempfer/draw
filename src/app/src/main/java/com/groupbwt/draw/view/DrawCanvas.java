@@ -2,6 +2,7 @@ package com.groupbwt.draw.view;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -14,131 +15,111 @@ import android.view.SurfaceView;
 import android.view.View;
 
 
-public class DrawCanvas extends SurfaceView implements SurfaceHolder.Callback  {
+public class DrawCanvas extends SurfaceView  {
+
 
     private Path mPath;
 
-    private Thread thread = null;
+    private Paint mPaint;
 
-    private SurfaceHolder mSurfaceHolder;
+    private float mX, mY;
 
-    private DrawThread mDrawThread;
+    private static final float TOLERANCE = 5;
 
-    private float mX, mY, mLastX, mLastY;
+    private float mStrokeWidth = 10f;
 
-    private Paint mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private int mStrokeColor = Color.BLUE;
 
-    private boolean mDrawing;
-
-
-    public DrawCanvas(Context context) {
-        super(context);
+    public DrawCanvas(Context c, AttributeSet attrs) {
+        super(c, attrs);
         init();
     }
 
-    public DrawCanvas(Context context, AttributeSet attrs) {
-        super(context, attrs);
+    public DrawCanvas(Context c) {
+        super(c);
         init();
-    }
-
-    public DrawCanvas(Context context, AttributeSet attrs, int defStyle) {
-        super(context, attrs, defStyle);
-        init();
-    }
-
-    @Override
-    public void surfaceCreated(SurfaceHolder holder) {
-        mDrawThread = new DrawThread(getHolder());
-        mDrawThread.setRunning(true);
-        mDrawThread.start();
-        //this.setBackgroundColor(Color.WHITE);
-    }
-
-    @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-
-    }
-
-    @Override
-    public void surfaceDestroyed(SurfaceHolder holder) {
-        boolean retry = true;
-        mDrawThread.setRunning(false);
-        while (retry) {
-            try {
-                thread.join();
-                retry = false;
-            } catch (InterruptedException e) {}
-        }
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        int type = event.getAction();
+        float x = event.getX();
+        float y = event.getY();
 
-        if(type == MotionEvent.ACTION_DOWN) {
-            mPath = new Path();
-            mPath.moveTo(event.getX(), event.getY());
-
-            mDrawing = true;
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                startTouch(x, y);
+                invalidate();
+                break;
+            case MotionEvent.ACTION_MOVE:
+                moveTouch(x, y);
+                invalidate();
+                break;
+            case MotionEvent.ACTION_UP:
+                upTouch();
+                invalidate();
+                break;
         }
-
-        if(type == MotionEvent.ACTION_MOVE) {
-            mPath.lineTo(event.getX(), event.getY());
-        }
-
-        if (type == MotionEvent.ACTION_UP) {
-            mDrawing = false;
-        }
-
         return true;
     }
 
-        private void init() {
-        getHolder().addCallback(this);
+    // override onDraw
+    @Override
+    protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+        // draw the mPath with the mPaint on the canvas when onDraw
 
-        setFocusable(true); // make sure we get key events
+        canvas.drawPath(mPath, mPaint);
+    }
 
-        mPaint.setStyle(Paint.Style.STROKE);
-        mPaint.setStrokeWidth(10);
+    private void init () {
+        // we set a new Path
+        mPath = new Path();
+        // and we set a new Paint with the desired attributes
+        mPaint = new Paint();
+        mPaint.setAntiAlias(true);
         mPaint.setColor(Color.RED);
+        mPaint.setDither(true);
+        mPaint.setColor(mStrokeColor);
+        mPaint.setStyle(Paint.Style.STROKE);
+        mPaint.setStrokeJoin(Paint.Join.ROUND);
+        mPaint.setStrokeCap(Paint.Cap.ROUND);
+        mPaint.setStrokeWidth(mStrokeWidth);
     }
 
-    private class DrawThread extends Thread {
 
-        private final SurfaceHolder mThreadSurfaceHolder;
 
-        private boolean myThreadRun = false;
+    // when ACTION_DOWN start touch according to the x,y values
+    private void startTouch(float x, float y) {
+        mPath.moveTo(x, y);
+        mX = x;
+        mY = y;
 
-        DrawThread(SurfaceHolder surfaceHolder) {
-            mThreadSurfaceHolder = surfaceHolder;
-        }
+        mPath.addCircle(mX,mY, 10f/8, Path.Direction.CCW);
+    }
 
-        void setRunning(boolean b) {
-            myThreadRun = b;
-        }
-
-        @Override
-        public void run() {
-            while (myThreadRun) {
-                Canvas c = null;
-                if(mDrawing) {
-                    try {
-                        c = mThreadSurfaceHolder.lockCanvas(null);
-                        synchronized (mThreadSurfaceHolder) {
-                            c.drawPath(mPath, mPaint);
-                        }
-                    } finally {
-                        // do this in a finally so that if an exception is thrown
-                        // during the above, we don't leave the Surface in an
-                        // inconsistent state
-                        if (c != null) {
-                            mThreadSurfaceHolder.unlockCanvasAndPost(c);
-                        }
-                    }
-                }
-
-            }
+    // when ACTION_MOVE move touch according to the x,y values
+    private void moveTouch(float x, float y) {
+        float dx = Math.abs(x - mX);
+        float dy = Math.abs(y - mY);
+        if (dx >= TOLERANCE || dy >= TOLERANCE) {
+            mPath.quadTo(mX, mY, (x + mX) / 2, (y + mY) / 2);
+            mX = x;
+            mY = y;
         }
     }
+
+    public void clearCanvas() {
+        mPath.reset();
+        invalidate();
+    }
+
+    // when ACTION_UP stop touch
+    private void upTouch() {
+        mPath.lineTo(mX, mY);
+        mPath.addCircle(mX,mY, mStrokeWidth/10, Path.Direction.CW);
+    }
+
+    //override the onTouchEvent
+
 
 }

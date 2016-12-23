@@ -11,6 +11,6 @@ public class DrawActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(new DrawCanvas(this));
+        setContentView(R.layout.activity_draw);
     }
 }
