@@ -18,6 +18,8 @@ public class DrawActivity extends AppCompatActivity {
 
     private Button mButtonColor;
 
+    private Button mButtonClear;
+
     private DrawCanvas mDrawCanvas;
 
     @Override
@@ -27,6 +29,7 @@ public class DrawActivity extends AppCompatActivity {
 
         mButtonColor = (Button) findViewById(R.id.color_btn);
         mDrawCanvas = (DrawCanvas) findViewById(R.id.draw_canvas);
+        mButtonClear = (Button) findViewById(R.id.clear_btn);
 
 
         mButtonColor.setOnClickListener(new View.OnClickListener() {
@@ -35,6 +38,14 @@ public class DrawActivity extends AppCompatActivity {
                 showColorDialog();
             }
         });
+
+        mButtonClear.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                clearCanvas();
+            }
+        });
+
     }
 
     private void showColorDialog () {
@@ -59,6 +70,15 @@ public class DrawActivity extends AppCompatActivity {
                 });
                 dialog.show(fragmentManager, "color-dialog");
 
+            }
+        });
+    }
+
+    private void clearCanvas () {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mDrawCanvas.clearCanvas();
             }
         });
     }

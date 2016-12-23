@@ -7,22 +7,26 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.view.View;
 
 import com.groupbwt.draw.R;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class DrawCanvas extends SurfaceView  {
 
 
-    private Path mPath;
+    private Path mCurrentPath;
 
-    private Paint mPaint;
+    private Paint mCurrentPaint;
+
+    private Paint mBitmapPaint;
 
     private float mX, mY;
 
@@ -31,6 +35,14 @@ public class DrawCanvas extends SurfaceView  {
     private float mStrokeWidth = 10f;
 
     private int mStrokeColor = Color.BLUE;
+
+    private Bitmap mBitmap;
+
+    private Canvas mCanvas;
+
+    private List<Stroke> mStrokes = new ArrayList<>();
+
+    private boolean mDrawing = false;
 
     public DrawCanvas(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -45,6 +57,8 @@ public class DrawCanvas extends SurfaceView  {
         super(c);
         init();
     }
+
+
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -74,7 +88,7 @@ public class DrawCanvas extends SurfaceView  {
 
     public void setStrokeWidth(float strokeWidth) {
         mStrokeWidth = strokeWidth;
-        mPaint.setStrokeWidth(strokeWidth);
+        initPaint();
     }
 
     public int getStrokeColor() {
@@ -83,42 +97,71 @@ public class DrawCanvas extends SurfaceView  {
 
     public void setStrokeColor(int strokeColor) {
         mStrokeColor = strokeColor;
-        mPaint.setColor(strokeColor);
+        initPaint();
+    }
+
+    public void clearCanvas() {
+        mCurrentPath.reset();
+        mStrokes.clear();
+        mBitmap = Bitmap.createBitmap(mCanvas.getWidth(), mCanvas.getHeight(), Bitmap.Config.ARGB_8888);
+        mCanvas = new Canvas(mBitmap);
+        invalidate();
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+
+        mBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+        mCanvas = new Canvas(mBitmap);
     }
 
     // override onDraw
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        // draw the mPath with the mPaint on the canvas when onDraw
+        if(mCurrentPath != null) {
 
-        canvas.drawPath(mPath, mPaint);
+            canvas.drawBitmap( mBitmap, 0, 0, mBitmapPaint);
+            canvas.drawPath( mCurrentPath,  mCurrentPaint);
+        }
+
+        /*if(mDrawing && mCurrentPath != null) {
+            canvas.drawPath(mCurrentPath, mCurrentPaint);
+        } else {
+            for(Stroke stroke: mStrokes){
+                canvas.drawPath(stroke.getPath(), stroke.getPaint());
+            }
+        }*/
     }
 
     private void init () {
-        // we set a new Path
-        mPath = new Path();
-        // and we set a new Paint with the desired attributes
-        mPaint = new Paint();
-        mPaint.setAntiAlias(true);
-        mPaint.setColor(Color.RED);
-        mPaint.setDither(true);
-        mPaint.setColor(mStrokeColor);
-        mPaint.setStyle(Paint.Style.STROKE);
-        mPaint.setStrokeJoin(Paint.Join.ROUND);
-        mPaint.setStrokeCap(Paint.Cap.ROUND);
-        mPaint.setStrokeWidth(mStrokeWidth);
+        mBitmapPaint = new Paint(Paint.DITHER_FLAG);
+        initPaint();
+    }
+
+    private void initPaint () {
+        mCurrentPaint = new Paint();
+        mCurrentPaint.setAntiAlias(true);
+        mCurrentPaint.setColor(Color.RED);
+        mCurrentPaint.setDither(true);
+        mCurrentPaint.setColor(mStrokeColor);
+        mCurrentPaint.setStyle(Paint.Style.STROKE);
+        mCurrentPaint.setStrokeJoin(Paint.Join.ROUND);
+        mCurrentPaint.setStrokeCap(Paint.Cap.ROUND);
+        mCurrentPaint.setStrokeWidth(mStrokeWidth);
     }
 
 
 
     // when ACTION_DOWN start touch according to the x,y values
     private void startTouch(float x, float y) {
-        mPath.moveTo(x, y);
+        mDrawing = true;
+        mCurrentPath = new Path();
+        mCurrentPath.moveTo(x, y);
         mX = x;
         mY = y;
-
-        mPath.addCircle(mX,mY, 10f/8, Path.Direction.CCW);
+        mCurrentPath.addCircle(mX,mY, mStrokeWidth/10, Path.Direction.CCW);
     }
 
     // when ACTION_MOVE move touch according to the x,y values
@@ -126,21 +169,41 @@ public class DrawCanvas extends SurfaceView  {
         float dx = Math.abs(x - mX);
         float dy = Math.abs(y - mY);
         if (dx >= TOLERANCE || dy >= TOLERANCE) {
-            mPath.quadTo(mX, mY, (x + mX) / 2, (y + mY) / 2);
+            mCurrentPath.quadTo(mX, mY, (x + mX) / 2, (y + mY) / 2);
             mX = x;
             mY = y;
         }
     }
 
-    public void clearCanvas() {
-        mPath.reset();
-        invalidate();
-    }
-
     // when ACTION_UP stop touch
     private void upTouch() {
-        mPath.lineTo(mX, mY);
-        mPath.addCircle(mX,mY, mStrokeWidth/10, Path.Direction.CW);
+        mCurrentPath.lineTo(mX, mY);
+        mCurrentPath.addCircle(mX,mY, mStrokeWidth/10, Path.Direction.CW);
+        mStrokes.add(new Stroke(mCurrentPaint, mCurrentPath));
+        mDrawing = false;
+        mCanvas.drawPath(mCurrentPath,  mCurrentPaint);
+
+    }
+
+
+    private class Stroke {
+
+        private Paint mPaint;
+
+        private Path mPath;
+
+        Stroke(Paint paint, Path path) {
+            mPaint = paint;
+            mPath = path;
+        }
+
+        public Paint getPaint() {
+            return mPaint;
+        }
+
+        public Path getPath() {
+            return mPath;
+        }
     }
 
     //override the onTouchEvent
