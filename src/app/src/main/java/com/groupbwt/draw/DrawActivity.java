@@ -1,6 +1,7 @@
 package com.groupbwt.draw;
 
 import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.support.annotation.ColorInt;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
@@ -21,6 +22,32 @@ public class DrawActivity extends AppCompatActivity {
     private Button mButtonClear;
 
     private DrawCanvas mDrawCanvas;
+
+    private int[] mColors = {
+            Color.RED,
+            Color.parseColor("#F44336"),
+            Color.parseColor("#E91E63"),
+            Color.parseColor("#9C27B0"),
+            Color.parseColor("#673AB7"),
+            Color.parseColor("#3F51B5"),
+            Color.parseColor("#2196F3"),
+            Color.BLUE,
+            Color.parseColor("#03A9F4"),
+            Color.parseColor("#00BCD4"),
+            Color.parseColor("#009688"),
+            Color.parseColor("#4CAF50"),
+            Color.parseColor("#8BC34A"),
+            Color.GREEN,
+            Color.parseColor("#CDDC39"),
+            Color.parseColor("#FFEB3B"),
+            Color.YELLOW,
+            Color.parseColor("#FFC107"),
+            Color.parseColor("#FF5722"),
+            Color.parseColor("#795548"),
+            Color.parseColor("#9E9E9E"),
+            Color.parseColor("#607D8B"),
+            Color.BLACK
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +73,8 @@ public class DrawActivity extends AppCompatActivity {
             }
         });
 
+        setColorBtnColor(mDrawCanvas.getStrokeColor());
+
     }
 
     private void showColorDialog () {
@@ -54,8 +83,7 @@ public class DrawActivity extends AppCompatActivity {
             public void run() {
                 FragmentManager fragmentManager = getSupportFragmentManager();
                 SpectrumDialog.Builder builder = new SpectrumDialog.Builder(getApplicationContext());
-                int[] colors =  {Color.RED, Color.BLUE, Color.GRAY, Color.GREEN, Color.YELLOW, Color.BLACK};
-                builder.setColors(colors);
+                builder.setColors(mColors);
                 builder.setSelectedColor(mDrawCanvas.getStrokeColor());
                 SpectrumDialog dialog = builder.build();
 
@@ -65,6 +93,7 @@ public class DrawActivity extends AppCompatActivity {
                         Log.d("DrawActivity", "color: " + color);
                         if(positiveResult) {
                             mDrawCanvas.setStrokeColor(color);
+                            setColorBtnColor(color);
                         }
                     }
                 });
@@ -81,5 +110,10 @@ public class DrawActivity extends AppCompatActivity {
                 mDrawCanvas.clearCanvas();
             }
         });
+    }
+
+    private void setColorBtnColor (int color) {
+        GradientDrawable bgShape = (GradientDrawable)mButtonColor.getBackground();
+        bgShape.setColor(color);
     }
 }

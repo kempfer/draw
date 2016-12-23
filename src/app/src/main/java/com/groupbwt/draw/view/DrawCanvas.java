@@ -101,11 +101,14 @@ public class DrawCanvas extends SurfaceView  {
     }
 
     public void clearCanvas() {
-        mCurrentPath.reset();
-        mStrokes.clear();
-        mBitmap = Bitmap.createBitmap(mCanvas.getWidth(), mCanvas.getHeight(), Bitmap.Config.ARGB_8888);
-        mCanvas = new Canvas(mBitmap);
-        invalidate();
+        if(mCurrentPath != null) {
+            mCurrentPath.reset();
+            mStrokes.clear();
+            mBitmap = Bitmap.createBitmap(mCanvas.getWidth(), mCanvas.getHeight(), Bitmap.Config.ARGB_8888);
+            mCanvas = new Canvas(mBitmap);
+            invalidate();
+        }
+
     }
 
     @Override
