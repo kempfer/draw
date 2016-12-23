@@ -74,6 +74,7 @@ public class DrawCanvas extends SurfaceView  {
 
     public void setStrokeWidth(float strokeWidth) {
         mStrokeWidth = strokeWidth;
+        mPaint.setStrokeWidth(strokeWidth);
     }
 
     public int getStrokeColor() {
@@ -82,6 +83,7 @@ public class DrawCanvas extends SurfaceView  {
 
     public void setStrokeColor(int strokeColor) {
         mStrokeColor = strokeColor;
+        mPaint.setColor(strokeColor);
     }
 
     // override onDraw

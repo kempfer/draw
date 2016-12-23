@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">draw</string>
+    <string name="color">Color</string>
 </resources>
