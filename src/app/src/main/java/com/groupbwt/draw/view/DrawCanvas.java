@@ -14,6 +14,8 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 
+import com.groupbwt.draw.R;
+
 
 public class DrawCanvas extends SurfaceView  {
 
@@ -30,8 +32,12 @@ public class DrawCanvas extends SurfaceView  {
 
     private int mStrokeColor = Color.BLUE;
 
-    public DrawCanvas(Context c, AttributeSet attrs) {
-        super(c, attrs);
+    public DrawCanvas(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        TypedArray a = context.obtainStyledAttributes(attrs,  R.styleable.DrawCanvas, 0, 0);
+        mStrokeColor = a.getColor(R.styleable.DrawCanvas_stroke_color, Color.BLUE);
+        mStrokeWidth = a.getFloat(R.styleable.DrawCanvas_stroke_width, 10f);
+        a.recycle();
         init();
     }
 
@@ -60,6 +66,22 @@ public class DrawCanvas extends SurfaceView  {
                 break;
         }
         return true;
+    }
+
+    public float getStrokeWidth() {
+        return mStrokeWidth;
+    }
+
+    public void setStrokeWidth(float strokeWidth) {
+        mStrokeWidth = strokeWidth;
+    }
+
+    public int getStrokeColor() {
+        return mStrokeColor;
+    }
+
+    public void setStrokeColor(int strokeColor) {
+        mStrokeColor = strokeColor;
     }
 
     // override onDraw
